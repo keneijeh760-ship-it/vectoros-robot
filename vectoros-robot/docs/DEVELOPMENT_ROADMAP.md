@@ -10,11 +10,11 @@ Robot State Machine
 
 Sprint 2
 
-Movement Engine
+World Model Foundation (Coordinate / WarehouseWorld surface used by Sprint 03)
 
 Sprint 3
 
-Warehouse Map
+Navigation Foundation
 
 Sprint 4
 
