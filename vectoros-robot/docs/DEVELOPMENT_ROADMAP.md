@@ -22,11 +22,11 @@ Mission Foundation
 
 Sprint 5
 
-Telemetry Publishing
+Energy Management System
 
 Sprint 6
 
-Task Execution
+Telemetry Publishing
 
 Sprint 7
 
