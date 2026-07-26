@@ -26,7 +26,7 @@ Energy Management System
 
 Sprint 6
 
-Telemetry Publishing
+MQTT Integration
 
 Sprint 7
 

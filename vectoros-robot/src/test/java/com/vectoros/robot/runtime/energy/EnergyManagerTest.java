@@ -1,5 +1,6 @@
 package com.vectoros.robot.runtime.energy;
 
+import com.vectoros.robot.messaging.InMemoryRobotEventPublisher;
 import com.vectoros.robot.runtime.energy.events.BatteryCriticalEvent;
 import com.vectoros.robot.runtime.energy.events.BatteryDepletedEvent;
 import com.vectoros.robot.runtime.energy.events.BatteryLowEvent;
@@ -20,17 +21,20 @@ class EnergyManagerTest {
 
     private FakeBatteryHardware hardware;
     private InMemoryRuntimeEventBus eventBus;
+    private InMemoryRobotEventPublisher robotEvents;
     private EnergyManager energyManager;
 
     @BeforeEach
     void setUp() {
         hardware = new FakeBatteryHardware(100);
         eventBus = new InMemoryRuntimeEventBus();
+        robotEvents = new InMemoryRobotEventPublisher();
         energyManager = new EnergyManager(
                 "robot-energy",
                 hardware,
                 new FixedStepEnergyConsumptionModel(5.0),
                 eventBus,
+                robotEvents,
                 Clock.fixed(FIXED, ZoneOffset.UTC));
     }
 
@@ -41,6 +45,8 @@ class EnergyManagerTest {
         assertThat(after.percentage()).isEqualTo(95.0);
         assertThat(hardware.percentage).isEqualTo(95.0);
         assertThat(energyManager.currentBattery().percentage()).isEqualTo(95.0);
+        assertThat(robotEvents.batteryMessages()).hasSize(1);
+        assertThat(robotEvents.batteryMessages().getFirst().percentage()).isEqualTo(95.0);
     }
 
     @Test
@@ -72,6 +78,7 @@ class EnergyManagerTest {
                 hardware,
                 new FixedStepEnergyConsumptionModel(5.0),
                 eventBus,
+                robotEvents,
                 Clock.fixed(FIXED, ZoneOffset.UTC));
 
         energyManager.consumeEnergyForMovementStep(1.0); // 7 critical

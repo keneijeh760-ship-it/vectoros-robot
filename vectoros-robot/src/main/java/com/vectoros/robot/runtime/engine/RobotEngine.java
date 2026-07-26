@@ -1,5 +1,9 @@
 package com.vectoros.robot.runtime.engine;
 
+import com.vectoros.robot.messaging.NoOpRobotEventPublisher;
+import com.vectoros.robot.messaging.RobotEventPublisher;
+import com.vectoros.robot.messaging.RobotPositionMessage;
+import com.vectoros.robot.messaging.RobotStatusMessage;
 import com.vectoros.robot.runtime.energy.EnergyManager;
 import com.vectoros.robot.runtime.energy.FixedStepEnergyConsumptionModel;
 import com.vectoros.robot.runtime.events.PositionChangedEvent;
@@ -37,6 +41,7 @@ import java.util.Objects;
  * Mission execution is delegated to {@link MissionManager}.
  * Energy updates are delegated exclusively to {@link EnergyManager}.
  * Status changes are delegated exclusively to {@link RobotStateMachine}.
+ * Fleet-facing events go through {@link RobotEventPublisher} (never MQTT directly).
  */
 public final class RobotEngine {
 
@@ -49,9 +54,11 @@ public final class RobotEngine {
     private final PositionTracker positionTracker;
     private final TaskExecutor taskExecutor;
     private final RuntimeEventPublisher eventPublisher;
+    private final RobotEventPublisher robotEventPublisher;
     private final Clock clock;
 
     private boolean running;
+    private RobotStatus lastPublishedStatus;
 
     public RobotEngine(
             RobotState state,
@@ -63,6 +70,7 @@ public final class RobotEngine {
             PositionTracker positionTracker,
             TaskExecutor taskExecutor,
             RuntimeEventPublisher eventPublisher,
+            RobotEventPublisher robotEventPublisher,
             Clock clock) {
         this.state = Objects.requireNonNull(state, "state");
         this.stateMachine = Objects.requireNonNull(stateMachine, "stateMachine");
@@ -76,6 +84,7 @@ public final class RobotEngine {
         this.positionTracker = Objects.requireNonNull(positionTracker, "positionTracker");
         this.taskExecutor = Objects.requireNonNull(taskExecutor, "taskExecutor");
         this.eventPublisher = Objects.requireNonNull(eventPublisher, "eventPublisher");
+        this.robotEventPublisher = Objects.requireNonNull(robotEventPublisher, "robotEventPublisher");
         this.clock = Objects.requireNonNull(clock, "clock");
     }
 
@@ -91,6 +100,7 @@ public final class RobotEngine {
                 batteryHardware,
                 positionHardware,
                 eventPublisher,
+                NoOpRobotEventPublisher.INSTANCE,
                 WarehouseWorld.square(50));
     }
 
@@ -100,6 +110,41 @@ public final class RobotEngine {
             BatteryHardware batteryHardware,
             PositionHardware positionHardware,
             RuntimeEventPublisher eventPublisher,
+            WarehouseWorld world) {
+        return create(
+                robotId,
+                movementHardware,
+                batteryHardware,
+                positionHardware,
+                eventPublisher,
+                NoOpRobotEventPublisher.INSTANCE,
+                world);
+    }
+
+    public static RobotEngine create(
+            String robotId,
+            MovementHardware movementHardware,
+            BatteryHardware batteryHardware,
+            PositionHardware positionHardware,
+            RuntimeEventPublisher eventPublisher,
+            RobotEventPublisher robotEventPublisher) {
+        return create(
+                robotId,
+                movementHardware,
+                batteryHardware,
+                positionHardware,
+                eventPublisher,
+                robotEventPublisher,
+                WarehouseWorld.square(50));
+    }
+
+    public static RobotEngine create(
+            String robotId,
+            MovementHardware movementHardware,
+            BatteryHardware batteryHardware,
+            PositionHardware positionHardware,
+            RuntimeEventPublisher eventPublisher,
+            RobotEventPublisher robotEventPublisher,
             WarehouseWorld world) {
         RobotState state = RobotState.initial(robotId);
         Clock clock = Clock.systemUTC();
@@ -113,12 +158,14 @@ public final class RobotEngine {
                 world,
                 eventPublisher,
                 clock);
-        MissionManager missionManager = new MissionManager(robotId, navigationEngine, world, eventPublisher, clock);
+        MissionManager missionManager = new MissionManager(
+                robotId, navigationEngine, world, eventPublisher, robotEventPublisher, clock);
         EnergyManager energyManager = new EnergyManager(
                 robotId,
                 batteryHardware,
                 new FixedStepEnergyConsumptionModel(),
                 eventPublisher,
+                robotEventPublisher,
                 clock);
         return new RobotEngine(
                 state,
@@ -130,6 +177,7 @@ public final class RobotEngine {
                 positionTracker,
                 new TaskExecutor(),
                 eventPublisher,
+                robotEventPublisher,
                 clock);
     }
 
@@ -152,6 +200,7 @@ public final class RobotEngine {
 
         syncPoseFromHardware();
         syncBatteryFromEnergyManager();
+        publishStatusIfChanged(now);
     }
 
     public void shutdown() {
@@ -161,7 +210,9 @@ public final class RobotEngine {
         state.updateSpeed(0.0);
         stateMachine.transitionToOffline();
         running = false;
-        state.updateHeartbeat(clock.instant());
+        Instant now = clock.instant();
+        state.updateHeartbeat(now);
+        publishStatusIfChanged(now);
     }
 
     public void assignMission(Mission mission) {
@@ -187,6 +238,7 @@ public final class RobotEngine {
         Instant now = clock.instant();
         state.updateHeartbeat(now);
         eventPublisher.publish(new TaskStartedEvent(state.robotId(), mission.missionId(), now));
+        publishStatusIfChanged(now);
     }
 
     public void assignTask(RobotTask task) {
@@ -227,9 +279,7 @@ public final class RobotEngine {
         if (movementOccurred) {
             energyManager.consumeEnergyForMovementStep(state.speed());
             syncBatteryFromEnergyManager();
-        }
-
-        if (movementOccurred) {
+            publishPosition(now);
             eventPublisher.publish(
                     new PositionChangedEvent(state.robotId(), previousPosition, state.position(), now));
         }
@@ -244,6 +294,8 @@ public final class RobotEngine {
             state.clearTask();
             stateMachine.transition(RobotStateEvent.FAULT_DETECTED);
         }
+
+        publishStatusIfChanged(now);
     }
 
     public void cancelMission() {
@@ -256,6 +308,7 @@ public final class RobotEngine {
             stateMachine.transition(RobotStateEvent.FAULT_DETECTED);
             stateMachine.transition(RobotStateEvent.ERROR_CLEARED);
         }
+        publishStatusIfChanged(clock.instant());
     }
 
     private void applyMissionResult(MissionResult missionResult, Instant now) {
@@ -306,6 +359,30 @@ public final class RobotEngine {
 
     public EnergyManager energyManager() {
         return energyManager;
+    }
+
+    public RobotEventPublisher robotEventPublisher() {
+        return robotEventPublisher;
+    }
+
+    private void publishStatusIfChanged(Instant now) {
+        RobotStatus current = stateMachine.currentStatus();
+        if (current == lastPublishedStatus) {
+            return;
+        }
+        lastPublishedStatus = current;
+        robotEventPublisher.publishStatus(new RobotStatusMessage(
+                state.robotId(), current.name(), now));
+    }
+
+    private void publishPosition(Instant now) {
+        Position position = state.position();
+        robotEventPublisher.publishPosition(new RobotPositionMessage(
+                state.robotId(),
+                position.x(),
+                position.y(),
+                state.heading().name(),
+                now));
     }
 
     private static boolean isMissionStatus(RobotStatus status) {

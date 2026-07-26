@@ -56,6 +56,13 @@ Serialize messages.
 
 No business logic.
 
+Sprint 06 implements this as:
+
+- Messaging ports: `RobotEventPublisher`, `RobotCommandReceiver` (`com.vectoros.robot.messaging`)
+- MQTT adapters: `MqttRobotEventPublisher`, `MqttRobotCommandReceiver` (`com.vectoros.robot.mqtt`)
+
+Runtime components depend only on messaging interfaces. MQTT adapters must not contain business logic.
+
 ---
 
 Runtime Layer

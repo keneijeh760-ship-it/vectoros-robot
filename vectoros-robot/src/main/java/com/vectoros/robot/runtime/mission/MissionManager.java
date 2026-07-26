@@ -1,5 +1,7 @@
 package com.vectoros.robot.runtime.mission;
 
+import com.vectoros.robot.messaging.RobotEventPublisher;
+import com.vectoros.robot.messaging.RobotMissionMessage;
 import com.vectoros.robot.runtime.events.RuntimeEventPublisher;
 import com.vectoros.robot.runtime.mission.events.MissionCancelledEvent;
 import com.vectoros.robot.runtime.mission.events.MissionCompletedEvent;
@@ -19,7 +21,7 @@ import java.util.Optional;
 
 /**
  * Highest-level coordinator for mission execution inside the robot runtime.
- * Delegates movement to {@link NavigationEngine}; does not talk to HAL.
+ * Delegates movement to {@link NavigationEngine}; does not talk to HAL or MQTT.
  */
 public final class MissionManager {
 
@@ -27,6 +29,7 @@ public final class MissionManager {
     private final NavigationEngine navigationEngine;
     private final WarehouseWorld world;
     private final RuntimeEventPublisher eventPublisher;
+    private final RobotEventPublisher robotEventPublisher;
     private final Clock clock;
 
     private Mission activeMission;
@@ -39,6 +42,7 @@ public final class MissionManager {
             NavigationEngine navigationEngine,
             WarehouseWorld world,
             RuntimeEventPublisher eventPublisher,
+            RobotEventPublisher robotEventPublisher,
             Clock clock) {
         if (robotId == null || robotId.isBlank()) {
             throw new IllegalArgumentException("robotId must not be blank");
@@ -47,6 +51,7 @@ public final class MissionManager {
         this.navigationEngine = Objects.requireNonNull(navigationEngine, "navigationEngine");
         this.world = Objects.requireNonNull(world, "world");
         this.eventPublisher = Objects.requireNonNull(eventPublisher, "eventPublisher");
+        this.robotEventPublisher = Objects.requireNonNull(robotEventPublisher, "robotEventPublisher");
         this.clock = Objects.requireNonNull(clock, "clock");
     }
 
@@ -75,6 +80,8 @@ public final class MissionManager {
 
         Instant now = clock.instant();
         eventPublisher.publish(new MissionStartedEvent(robotId, mission.missionId(), now));
+        robotEventPublisher.publishMission(new RobotMissionMessage(
+                robotId, mission.missionId(), RobotMissionMessage.EventType.STARTED, now));
     }
 
     public void cancelMission() {
@@ -87,6 +94,8 @@ public final class MissionManager {
         mission.markCancelled(now);
         clearActiveMission();
         eventPublisher.publish(new MissionCancelledEvent(robotId, mission.missionId(), now));
+        robotEventPublisher.publishMission(new RobotMissionMessage(
+                robotId, mission.missionId(), RobotMissionMessage.EventType.CANCELLED, now));
     }
 
     public boolean hasActiveMission() {
@@ -173,10 +182,11 @@ public final class MissionManager {
             mission.markCompleted(now);
             clearActiveMission();
             eventPublisher.publish(new MissionCompletedEvent(robotId, mission.missionId(), now));
+            robotEventPublisher.publishMission(new RobotMissionMessage(
+                    robotId, mission.missionId(), RobotMissionMessage.EventType.COMPLETED, now));
             return MissionResult.completed(mission);
         }
 
-        // Continue sequentially into the next step within the same tick.
         return tick();
     }
 
@@ -185,6 +195,8 @@ public final class MissionManager {
         mission.markFailed(now);
         clearActiveMission();
         eventPublisher.publish(new MissionFailedEvent(robotId, mission.missionId(), reason, now));
+        robotEventPublisher.publishMission(new RobotMissionMessage(
+                robotId, mission.missionId(), RobotMissionMessage.EventType.FAILED, now));
         return MissionResult.failed(mission, reason);
     }
 

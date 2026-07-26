@@ -1,5 +1,7 @@
 package com.vectoros.robot.runtime.energy;
 
+import com.vectoros.robot.messaging.RobotBatteryMessage;
+import com.vectoros.robot.messaging.RobotEventPublisher;
 import com.vectoros.robot.runtime.energy.events.BatteryCriticalEvent;
 import com.vectoros.robot.runtime.energy.events.BatteryDepletedEvent;
 import com.vectoros.robot.runtime.energy.events.BatteryLowEvent;
@@ -12,7 +14,7 @@ import java.util.Objects;
 
 /**
  * Sole authority for battery state and energy consumption.
- * MissionManager / NavigationEngine may read {@link #currentBattery()} but must never mutate energy.
+ * Publishes fleet-facing battery updates through {@link RobotEventPublisher} (never MQTT directly).
  */
 public final class EnergyManager {
 
@@ -20,6 +22,7 @@ public final class EnergyManager {
     private final BatteryHardware batteryHardware;
     private final EnergyConsumptionModel consumptionModel;
     private final RuntimeEventPublisher eventPublisher;
+    private final RobotEventPublisher robotEventPublisher;
     private final Clock clock;
 
     private BatteryModel battery;
@@ -32,6 +35,7 @@ public final class EnergyManager {
             BatteryHardware batteryHardware,
             EnergyConsumptionModel consumptionModel,
             RuntimeEventPublisher eventPublisher,
+            RobotEventPublisher robotEventPublisher,
             Clock clock) {
         if (robotId == null || robotId.isBlank()) {
             throw new IllegalArgumentException("robotId must not be blank");
@@ -40,6 +44,7 @@ public final class EnergyManager {
         this.batteryHardware = Objects.requireNonNull(batteryHardware, "batteryHardware");
         this.consumptionModel = Objects.requireNonNull(consumptionModel, "consumptionModel");
         this.eventPublisher = Objects.requireNonNull(eventPublisher, "eventPublisher");
+        this.robotEventPublisher = Objects.requireNonNull(robotEventPublisher, "robotEventPublisher");
         this.clock = Objects.requireNonNull(clock, "clock");
         this.battery = BatteryModel.ofPercentage(batteryHardware.readPercentage());
         resetAnnouncementFlags();
@@ -49,17 +54,15 @@ public final class EnergyManager {
             String robotId,
             BatteryHardware batteryHardware,
             RuntimeEventPublisher eventPublisher,
+            RobotEventPublisher robotEventPublisher,
             Clock clock) {
-        this(robotId, batteryHardware, new FixedStepEnergyConsumptionModel(), eventPublisher, clock);
+        this(robotId, batteryHardware, new FixedStepEnergyConsumptionModel(), eventPublisher, robotEventPublisher, clock);
     }
 
     public BatteryModel currentBattery() {
         return battery;
     }
 
-    /**
-     * Refresh model from HAL without consuming energy.
-     */
     public BatteryModel syncFromHardware() {
         this.battery = new BatteryModel(
                 batteryHardware.readPercentage(),
@@ -69,21 +72,20 @@ public final class EnergyManager {
         return battery;
     }
 
-    /**
-     * Consume energy for one successful movement step and emit threshold events.
-     */
     public BatteryModel consumeEnergy(MovementEnergyContext context) {
         Objects.requireNonNull(context, "context");
         double amount = consumptionModel.consumptionForMovementStep(context);
         if (amount > 0) {
             batteryHardware.drain(amount);
         }
+        Instant now = clock.instant();
         this.battery = new BatteryModel(
                 batteryHardware.readPercentage(),
                 false,
                 battery.capacity(),
                 battery.health());
-        emitThresholdEvents(clock.instant());
+        publishBatteryUpdate(now);
+        emitThresholdEvents(now);
         return battery;
     }
 
@@ -91,10 +93,6 @@ public final class EnergyManager {
         return consumeEnergy(MovementEnergyContext.simpleStep(speed));
     }
 
-    /**
-     * Future charging extension. Applies charge through HAL and updates the model.
-     * Not used by runtime tick in Sprint 05.
-     */
     public BatteryModel recharge(double amount) {
         if (amount < 0 || !Double.isFinite(amount)) {
             throw new IllegalArgumentException("recharge amount must be a non-negative finite number");
@@ -102,13 +100,23 @@ public final class EnergyManager {
         if (amount > 0) {
             batteryHardware.charge(amount);
         }
+        Instant now = clock.instant();
         this.battery = new BatteryModel(
                 batteryHardware.readPercentage(),
                 true,
                 battery.capacity(),
                 battery.health());
+        publishBatteryUpdate(now);
         resetAnnouncementFlagsIfRecovered();
         return battery;
+    }
+
+    private void publishBatteryUpdate(Instant now) {
+        robotEventPublisher.publishBattery(new RobotBatteryMessage(
+                robotId,
+                battery.percentage(),
+                battery.status().name(),
+                now));
     }
 
     private void emitThresholdEvents(Instant now) {

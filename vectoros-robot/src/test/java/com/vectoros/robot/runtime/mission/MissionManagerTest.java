@@ -1,5 +1,8 @@
 package com.vectoros.robot.runtime.mission;
 
+import com.vectoros.robot.messaging.InMemoryRobotEventPublisher;
+import com.vectoros.robot.messaging.NoOpRobotEventPublisher;
+import com.vectoros.robot.messaging.RobotMissionMessage;
 import com.vectoros.robot.runtime.events.InMemoryRuntimeEventBus;
 import com.vectoros.robot.runtime.hal.simulation.SimulationHardwareFactory;
 import com.vectoros.robot.runtime.mission.events.MissionCancelledEvent;
@@ -30,6 +33,7 @@ class MissionManagerTest {
     private static final Instant FIXED = Instant.parse("2026-07-26T10:00:00Z");
 
     private InMemoryRuntimeEventBus eventBus;
+    private InMemoryRobotEventPublisher robotEvents;
     private RobotState state;
     private NavigationEngine navigationEngine;
     private MissionManager missionManager;
@@ -37,6 +41,7 @@ class MissionManagerTest {
     @BeforeEach
     void setUp() {
         eventBus = new InMemoryRuntimeEventBus();
+        robotEvents = new InMemoryRobotEventPublisher();
         state = RobotState.initial("mission-robot");
         SimulationHardwareFactory hardware = SimulationHardwareFactory.createDefault();
         Clock clock = Clock.fixed(FIXED, ZoneOffset.UTC);
@@ -48,7 +53,8 @@ class MissionManagerTest {
                 WarehouseWorld.square(20),
                 eventBus,
                 clock);
-        missionManager = new MissionManager("mission-robot", navigationEngine, WarehouseWorld.square(20), eventBus, clock);
+        missionManager = new MissionManager(
+                "mission-robot", navigationEngine, WarehouseWorld.square(20), eventBus, robotEvents, clock);
     }
 
     @Test
@@ -63,6 +69,9 @@ class MissionManagerTest {
         assertThat(mission.status()).isEqualTo(MissionStatus.RUNNING);
         assertThat(missionManager.hasActiveMission()).isTrue();
         assertThat(eventBus.historyOfType(MissionStartedEvent.class)).hasSize(1);
+        assertThat(robotEvents.missionMessages()).hasSize(1);
+        assertThat(robotEvents.missionMessages().getFirst().eventType())
+                .isEqualTo(RobotMissionMessage.EventType.STARTED);
     }
 
     @Test
@@ -157,7 +166,12 @@ class MissionManagerTest {
                 eventBus,
                 Clock.fixed(FIXED, ZoneOffset.UTC));
         MissionManager manager = new MissionManager(
-                "mission-robot", failingNav, WarehouseWorld.square(10), eventBus, Clock.fixed(FIXED, ZoneOffset.UTC));
+                "mission-robot",
+                failingNav,
+                WarehouseWorld.square(10),
+                eventBus,
+                NoOpRobotEventPublisher.INSTANCE,
+                Clock.fixed(FIXED, ZoneOffset.UTC));
 
         Mission mission = Mission.of(
                 "m-fail",

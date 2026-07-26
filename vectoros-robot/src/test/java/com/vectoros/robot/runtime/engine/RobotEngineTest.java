@@ -252,12 +252,18 @@ class RobotEngineTest {
                 bus,
                 clock);
         MissionManager missionManager = new MissionManager(
-                "robot-clock", navigationEngine, WarehouseWorld.square(20), bus, clock);
+                "robot-clock",
+                navigationEngine,
+                WarehouseWorld.square(20),
+                bus,
+                com.vectoros.robot.messaging.NoOpRobotEventPublisher.INSTANCE,
+                clock);
         EnergyManager energyManager = new EnergyManager(
                 "robot-clock",
                 hardware.batteryHardware(),
                 new FixedStepEnergyConsumptionModel(),
                 bus,
+                com.vectoros.robot.messaging.NoOpRobotEventPublisher.INSTANCE,
                 clock);
 
         RobotEngine deterministic = new RobotEngine(
@@ -270,6 +276,7 @@ class RobotEngineTest {
                 positionTracker,
                 new TaskExecutor(),
                 bus,
+                com.vectoros.robot.messaging.NoOpRobotEventPublisher.INSTANCE,
                 clock);
 
         deterministic.start();

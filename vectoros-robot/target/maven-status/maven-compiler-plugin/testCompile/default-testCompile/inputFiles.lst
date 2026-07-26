@@ -1,3 +1,12 @@
+C:\Users\Kene\MACHINE LEARNING\VECTOROS\vectoros-robot\vectoros-robot\src\test\java\com\vectoros\robot\messaging\EngineRobotCommandReceiverTest.java
+C:\Users\Kene\MACHINE LEARNING\VECTOROS\vectoros-robot\vectoros-robot\src\test\java\com\vectoros\robot\messaging\InMemoryRobotEventPublisherTest.java
+C:\Users\Kene\MACHINE LEARNING\VECTOROS\vectoros-robot\vectoros-robot\src\test\java\com\vectoros\robot\messaging\MqttRuntimeBridgeIntegrationTest.java
+C:\Users\Kene\MACHINE LEARNING\VECTOROS\vectoros-robot\vectoros-robot\src\test\java\com\vectoros\robot\messaging\RuntimeMessagingIntegrationTest.java
+C:\Users\Kene\MACHINE LEARNING\VECTOROS\vectoros-robot\vectoros-robot\src\test\java\com\vectoros\robot\mqtt\MqttMessageSerializerTest.java
+C:\Users\Kene\MACHINE LEARNING\VECTOROS\vectoros-robot\vectoros-robot\src\test\java\com\vectoros\robot\mqtt\MqttRobotCommandReceiverTest.java
+C:\Users\Kene\MACHINE LEARNING\VECTOROS\vectoros-robot\vectoros-robot\src\test\java\com\vectoros\robot\mqtt\MqttRobotEventPublisherTest.java
+C:\Users\Kene\MACHINE LEARNING\VECTOROS\vectoros-robot\vectoros-robot\src\test\java\com\vectoros\robot\mqtt\RecordingMqttClientGateway.java
+C:\Users\Kene\MACHINE LEARNING\VECTOROS\vectoros-robot\vectoros-robot\src\test\java\com\vectoros\robot\mqtt\RobotMqttTopicConfigTest.java
 C:\Users\Kene\MACHINE LEARNING\VECTOROS\vectoros-robot\vectoros-robot\src\test\java\com\vectoros\robot\runtime\battery\BatteryManagerTest.java
 C:\Users\Kene\MACHINE LEARNING\VECTOROS\vectoros-robot\vectoros-robot\src\test\java\com\vectoros\robot\runtime\energy\BatteryModelTest.java
 C:\Users\Kene\MACHINE LEARNING\VECTOROS\vectoros-robot\vectoros-robot\src\test\java\com\vectoros\robot\runtime\energy\EnergyManagerTest.java
