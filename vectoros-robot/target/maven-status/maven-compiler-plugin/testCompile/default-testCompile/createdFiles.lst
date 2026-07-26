@@ -1,5 +1,6 @@
 com\vectoros\robot\runtime\navigation\MovementCommandTest.class
 com\vectoros\robot\messaging\EngineRobotCommandReceiverTest.class
+com\vectoros\robot\telemetry\TelemetryRuntimeIntegrationTest.class
 com\vectoros\robot\runtime\mission\MissionTest.class
 com\vectoros\robot\mqtt\RecordingMqttClientGateway$PublishedMessage.class
 com\vectoros\robot\runtime\battery\BatteryManagerTest$FakeBatteryHardware.class
@@ -7,6 +8,7 @@ com\vectoros\robot\runtime\model\RobotStateTest.class
 com\vectoros\robot\runtime\task\TaskExecutorTest.class
 com\vectoros\robot\runtime\navigation\HeadingTest.class
 com\vectoros\robot\runtime\state\RobotStateMachineTest.class
+com\vectoros\robot\telemetry\RobotTelemetrySnapshotTest.class
 com\vectoros\robot\runtime\energy\EnergyManagerTest.class
 com\vectoros\robot\runtime\battery\BatteryManagerTest.class
 com\vectoros\robot\mqtt\MqttRobotCommandReceiverTest.class
@@ -22,8 +24,10 @@ com\vectoros\robot\runtime\engine\RobotEngineTest.class
 com\vectoros\robot\mqtt\MqttMessageSerializerTest.class
 com\vectoros\robot\mqtt\RecordingMqttClientGateway.class
 com\vectoros\robot\mqtt\RobotMqttTopicConfigTest.class
+com\vectoros\robot\telemetry\RobotTelemetryPublisherTest.class
 com\vectoros\robot\runtime\position\PositionTrackerTest.class
 com\vectoros\robot\runtime\mission\MissionManagerTest.class
+com\vectoros\robot\telemetry\TelemetryMapperTest.class
 com\vectoros\robot\runtime\hal\simulation\SimulationHardwareTest.class
 com\vectoros\robot\runtime\motion\MotionControllerTest$RecordingMovementHardware.class
 com\vectoros\robot\runtime\energy\BatteryModelTest.class

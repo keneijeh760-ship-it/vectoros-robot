@@ -84,3 +84,7 @@ C:\Users\Kene\MACHINE LEARNING\VECTOROS\vectoros-robot\vectoros-robot\src\main\j
 C:\Users\Kene\MACHINE LEARNING\VECTOROS\vectoros-robot\vectoros-robot\src\main\java\com\vectoros\robot\runtime\task\TaskExecutor.java
 C:\Users\Kene\MACHINE LEARNING\VECTOROS\vectoros-robot\vectoros-robot\src\main\java\com\vectoros\robot\runtime\world\Coordinate.java
 C:\Users\Kene\MACHINE LEARNING\VECTOROS\vectoros-robot\vectoros-robot\src\main\java\com\vectoros\robot\runtime\world\WarehouseWorld.java
+C:\Users\Kene\MACHINE LEARNING\VECTOROS\vectoros-robot\vectoros-robot\src\main\java\com\vectoros\robot\telemetry\RobotTelemetryPublisher.java
+C:\Users\Kene\MACHINE LEARNING\VECTOROS\vectoros-robot\vectoros-robot\src\main\java\com\vectoros\robot\telemetry\RobotTelemetrySnapshot.java
+C:\Users\Kene\MACHINE LEARNING\VECTOROS\vectoros-robot\vectoros-robot\src\main\java\com\vectoros\robot\telemetry\RobotTelemetryType.java
+C:\Users\Kene\MACHINE LEARNING\VECTOROS\vectoros-robot\vectoros-robot\src\main\java\com\vectoros\robot\telemetry\TelemetryMapper.java

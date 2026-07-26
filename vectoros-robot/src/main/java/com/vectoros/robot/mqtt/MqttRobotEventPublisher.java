@@ -5,6 +5,7 @@ import com.vectoros.robot.messaging.RobotEventPublisher;
 import com.vectoros.robot.messaging.RobotMissionMessage;
 import com.vectoros.robot.messaging.RobotPositionMessage;
 import com.vectoros.robot.messaging.RobotStatusMessage;
+import com.vectoros.robot.telemetry.RobotTelemetrySnapshot;
 
 import java.util.Objects;
 
@@ -58,5 +59,11 @@ public final class MqttRobotEventPublisher implements RobotEventPublisher {
     public void publishPosition(RobotPositionMessage message) {
         Objects.requireNonNull(message, "message");
         mqttClient.publish(topics.positionTopic(robotId), serializer.serialize(message));
+    }
+
+    @Override
+    public void publishTelemetry(RobotTelemetrySnapshot snapshot) {
+        Objects.requireNonNull(snapshot, "snapshot");
+        mqttClient.publish(topics.telemetryTopic(robotId), serializer.serialize(snapshot));
     }
 }

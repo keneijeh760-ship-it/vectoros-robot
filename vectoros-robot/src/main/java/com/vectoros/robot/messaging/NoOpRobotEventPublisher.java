@@ -26,4 +26,9 @@ public final class NoOpRobotEventPublisher implements RobotEventPublisher {
     public void publishPosition(RobotPositionMessage message) {
         // intentionally empty
     }
+
+    @Override
+    public void publishTelemetry(com.vectoros.robot.telemetry.RobotTelemetrySnapshot snapshot) {
+        // intentionally empty
+    }
 }

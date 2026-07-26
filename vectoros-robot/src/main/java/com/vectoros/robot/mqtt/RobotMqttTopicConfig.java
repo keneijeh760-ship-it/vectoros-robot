@@ -11,12 +11,14 @@ public final class RobotMqttTopicConfig {
     public static final String DEFAULT_MISSION = "robot/{robotId}/events/mission";
     public static final String DEFAULT_BATTERY = "robot/{robotId}/events/battery";
     public static final String DEFAULT_POSITION = "robot/{robotId}/events/position";
+    public static final String DEFAULT_TELEMETRY = "robot/{robotId}/events/telemetry";
     public static final String DEFAULT_COMMANDS = "robot/{robotId}/commands";
 
     private final String statusTemplate;
     private final String missionTemplate;
     private final String batteryTemplate;
     private final String positionTemplate;
+    private final String telemetryTemplate;
     private final String commandsTemplate;
 
     public RobotMqttTopicConfig(
@@ -24,12 +26,27 @@ public final class RobotMqttTopicConfig {
             String missionTemplate,
             String batteryTemplate,
             String positionTemplate,
+            String telemetryTemplate,
             String commandsTemplate) {
         this.statusTemplate = requireTemplate(statusTemplate, "statusTemplate");
         this.missionTemplate = requireTemplate(missionTemplate, "missionTemplate");
         this.batteryTemplate = requireTemplate(batteryTemplate, "batteryTemplate");
         this.positionTemplate = requireTemplate(positionTemplate, "positionTemplate");
+        this.telemetryTemplate = requireTemplate(telemetryTemplate, "telemetryTemplate");
         this.commandsTemplate = requireTemplate(commandsTemplate, "commandsTemplate");
+    }
+
+    /**
+     * Sprint 06 constructor; telemetry topic falls back to the default template.
+     */
+    public RobotMqttTopicConfig(
+            String statusTemplate,
+            String missionTemplate,
+            String batteryTemplate,
+            String positionTemplate,
+            String commandsTemplate) {
+        this(statusTemplate, missionTemplate, batteryTemplate, positionTemplate,
+                DEFAULT_TELEMETRY, commandsTemplate);
     }
 
     public static RobotMqttTopicConfig defaults() {
@@ -38,6 +55,7 @@ public final class RobotMqttTopicConfig {
                 DEFAULT_MISSION,
                 DEFAULT_BATTERY,
                 DEFAULT_POSITION,
+                DEFAULT_TELEMETRY,
                 DEFAULT_COMMANDS);
     }
 
@@ -55,6 +73,10 @@ public final class RobotMqttTopicConfig {
 
     public String positionTopic(String robotId) {
         return resolve(positionTemplate, robotId);
+    }
+
+    public String telemetryTopic(String robotId) {
+        return resolve(telemetryTemplate, robotId);
     }
 
     public String commandsTopic(String robotId) {

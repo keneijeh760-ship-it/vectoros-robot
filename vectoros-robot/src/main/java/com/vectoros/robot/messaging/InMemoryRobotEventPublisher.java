@@ -1,5 +1,7 @@
 package com.vectoros.robot.messaging;
 
+import com.vectoros.robot.telemetry.RobotTelemetrySnapshot;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -14,6 +16,7 @@ public final class InMemoryRobotEventPublisher implements RobotEventPublisher {
     private final List<RobotMissionMessage> missionMessages = new ArrayList<>();
     private final List<RobotBatteryMessage> batteryMessages = new ArrayList<>();
     private final List<RobotPositionMessage> positionMessages = new ArrayList<>();
+    private final List<RobotTelemetrySnapshot> telemetrySnapshots = new ArrayList<>();
 
     @Override
     public void publishStatus(RobotStatusMessage message) {
@@ -35,6 +38,11 @@ public final class InMemoryRobotEventPublisher implements RobotEventPublisher {
         positionMessages.add(Objects.requireNonNull(message, "message"));
     }
 
+    @Override
+    public void publishTelemetry(RobotTelemetrySnapshot snapshot) {
+        telemetrySnapshots.add(Objects.requireNonNull(snapshot, "snapshot"));
+    }
+
     public List<RobotStatusMessage> statusMessages() {
         return Collections.unmodifiableList(statusMessages);
     }
@@ -51,10 +59,15 @@ public final class InMemoryRobotEventPublisher implements RobotEventPublisher {
         return Collections.unmodifiableList(positionMessages);
     }
 
+    public List<RobotTelemetrySnapshot> telemetrySnapshots() {
+        return Collections.unmodifiableList(telemetrySnapshots);
+    }
+
     public void clear() {
         statusMessages.clear();
         missionMessages.clear();
         batteryMessages.clear();
         positionMessages.clear();
+        telemetrySnapshots.clear();
     }
 }
