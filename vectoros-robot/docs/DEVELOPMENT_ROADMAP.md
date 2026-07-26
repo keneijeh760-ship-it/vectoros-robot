@@ -18,7 +18,7 @@ Navigation Foundation
 
 Sprint 4
 
-Battery Simulation
+Mission Foundation
 
 Sprint 5
 
